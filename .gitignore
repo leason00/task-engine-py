@@ -1,0 +1,12 @@
+*.pyc
+.idea
+.vscode
+.DS_Store
+
+
+# python virtualenv
+.venv
+
+# Emacs
+.\#*
+\#*\#
