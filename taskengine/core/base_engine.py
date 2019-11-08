@@ -4,11 +4,11 @@
 # @Author  : Leason
 
 """
-任务流执行单位
+任务流执行base class
 """
 import json
 
-from taskengine.core.models import save_task_step_meta_context
+from taskengine.core.models import save_task_step_meta_context, TaskStepInfo
 
 
 class BaseEngine(object):
@@ -32,7 +32,7 @@ class BaseEngine(object):
         把context持久化,
         :return:
         """
-        save_task_step_meta_context(json.dumps(self.context), step_name, task_queue_id)
+        TaskStepInfo.save_step_context(json.dumps(self.context), step_name, task_queue_id)
 
     def serialize_context(self, context):
         """

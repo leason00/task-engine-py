@@ -5,12 +5,17 @@
 """
 保存本地task key  和 代码map
 """
+import json
 import time
+import traceback
 
-from taskengine.core.models import get_task_queue, get_task_step_info, get_task_step_meta, insert_task_step_meta_info, \
-    get_task_step_record
+import nsq
+
+from taskengine.core.const import TaskStepInfoStatus, TaskStatus
+from taskengine.core.models.models import TaskQueue, TaskStepMeta, TaskStepInfo
 from taskengine.engines.engine_test import Test
 
+# todo task的获取采用从代码路径里读取
 task_map = {
     "test": Test
 }
@@ -45,11 +50,14 @@ class TaskEngine(object):
         不存在插入step meta 否则是中断任务重新开始
         :return:
         """
-        steps = get_task_step_info(self.task.task_key)
-        if get_task_step_meta(self.task.id):
-            raise Exception("no support")
-        else:
-            # 插入step meta
+        steps = TaskStepMeta.get_steps(self.task.task_key)
+        if not steps:
+            raise Exception("this task {} is not support".format(self.task.task_key))
+
+        step_instances = TaskStepInfo.get_steps_by_task_id(self.task.id)
+        if not step_instances:
+            # 第一次执行
+            # 实例化task，将task step插入
             step_infos = []
             for step in steps:
                 step_infos.append({
@@ -58,8 +66,8 @@ class TaskEngine(object):
                     "task_key": self.task.task_key,
                 })
             print(step_infos)
-            insert_task_step_meta_info(step_infos)
-            return steps
+            TaskStepInfo.insert_steps(step_infos)
+        return steps
 
     def do_steps(self):
         """
@@ -68,16 +76,40 @@ class TaskEngine(object):
         执行完更新context
         :return:
         """
+        # todo 获取task的方式待修改
         engine = self.get_engine()(self.task)
+        # 设置task执行中
+        TaskQueue.update_status(self.task.id, TaskStatus.doing)
+        # 获取顺序的steps
         steps = self.get_steps()
         for step in steps:
-            # 读取上下文
-            record_step_meta = get_task_step_record(self.task.id, step.step_name)
-            getattr(engine, "serialize_context")(record_step_meta.context)
-            # 执行
-            getattr(engine, step.step_name)()
-            # 保存执行上线文
-            getattr(engine, "save_context")(step.step_name, self.task.id)
+            # 从 task里指定的那个step开始执行，这个step可以是第一次的first step，也可以是重试的任意一个step
+            if step.step_name != self.task.step_name:
+                continue
+            # 获取当前步骤的信息
+            step_instance = TaskStepInfo.get_step(self.task.id, step.step_name)
+            # 设置该step为执行中
+            TaskStepInfo.set_step_status(self.task.id, step.step_name, TaskStepInfoStatus.doing)
+            # 将上下文信息写出engine class
+            engine.serialize_context(step_instance.context)
+            # 执行对应步骤的class method
+            try:
+                getattr(engine, step.step_name)()
+            except Exception as e:
+                # 执行失败设置该step执行失败， 并且设置task执行失败，且记录该task所执行到的step,interrupt
+                TaskStepInfo.set_step_status(self.task.id, step.step_name, TaskStepInfoStatus.interrupt)
+                TaskQueue.update_status(self.task.id, TaskStatus.interrupt, step_name=step.step_name)
+                print(traceback.format_exc())
+                # todo 执行过程中的所有日志存到mysql
+            finally:
+                # todo 执行日志输出到数据库 https://blog.csdn.net/J_Object/article/details/80179535
+                # 执行完之后将上线文重新保存
+                engine.save_context(step.step_name, self.task.id)
+                # 执行完之后修改该step的finish状态
+                TaskStepInfo.set_step_status(self.task.id, step.step_name, TaskStepInfoStatus.finnish)
+
+        # 所有步骤执行完之后，设置该task执行成功，task name为最后一步 do_end
+        TaskQueue.update_status(self.task.id, TaskStatus.finnish, step_name=steps[len(steps)-1].step_name)
 
 
 class Main(object):
@@ -87,33 +119,44 @@ class Main(object):
         获取本地所有的task
         """
 
-    def get_tasks(self):
-        """
-        获取当前老的待执行的task
-        :return:
-        """
-        return get_task_queue()
-
-    def do(self):
+    def do(self, task_id):
         """
         干活入口
         :return:
         """
-        tasks = self.get_tasks()
-        print(tasks)
-        for task in tasks:
-            TaskEngine(task).do_steps()
+        task = TaskQueue.get_task_by_id(task_id)
+        TaskEngine(task).do_steps()
 
-def main():
-    """
 
-    :return:
-    """
-    print("start...")
-    main_func = Main()
-    while True:
-        main_func.do()
-        time.sleep(5)
+# def main():
+#     """
+#
+#     :return:
+#     """
+#     print("start...")
+#     main_func = Main()
+#     while True:
+#         main_func.do()
+#         time.sleep(5)
 
-if __name__ == "__main__":
-    main()
+
+def handler(message):
+    message.enable_async()
+    message_dict =json.loads(message.data)
+    task_id = message_dict["id"]
+    Main().do(task_id)
+
+
+
+
+if __name__ == '__main__':
+    reader = nsq.Reader(
+        topic='leason-test',
+        channel='test2',
+        sub_ordered=True,
+        lookupd_http_addresses=['sqs-qa.s.qima-inc.com:4161'],
+        message_handler=handler,
+        requeue_delay=2,
+        user_agent='youzan pynsq'
+    )
+    nsq.run()

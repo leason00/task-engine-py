@@ -4,8 +4,17 @@
 # @Author  : Leason
 
 
-class Status(object):
-    wait = 0  # 等待执行
-    doing = 1  # 执行中
-    interrupt = 2  # 中断
-    finnish = 3  # 执行完
+class TaskStatus(object):
+    created = "created"  # 等待执行
+    scheduling = "scheduling"  # 等待执行
+    doing = "doing"  # 执行中
+    interrupt = "interrupt"  # 中断
+    finnish = "finnish"  # 执行完
+
+
+class TaskStepInfoStatus(object):
+    # 未执行0已执行1执行中2中断3
+    wait = "wait"
+    doing = "doing"
+    finnish = "finnish"
+    interrupt = "interrupt"
