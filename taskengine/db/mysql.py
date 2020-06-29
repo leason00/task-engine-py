@@ -5,7 +5,7 @@
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-ENGINE_URL = "mysql+pymysql://root:@127.0.0.1:3306/test?charset=utf8"
+ENGINE_URL = "mysql+pymysql://root:123456@127.0.0.1:3306/taskflow?charset=utf8mb4"
 
 
 def register_database():

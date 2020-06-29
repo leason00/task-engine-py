@@ -6,15 +6,15 @@
 
 class TaskStatus(object):
     created = "created"  # 等待执行
-    scheduling = "scheduling"  # 等待执行
+    waiting = "waiting"  # 等待执行
     doing = "doing"  # 执行中
-    interrupt = "interrupt"  # 中断
-    finnish = "finnish"  # 执行完
+    fail = "fail"  # 中断
+    done = "done"  # 执行完
 
 
-class TaskStepInfoStatus(object):
+class StepStatus(object):
     # 未执行0已执行1执行中2中断3
-    wait = "wait"
+    waiting = "waiting"
     doing = "doing"
-    finnish = "finnish"
-    interrupt = "interrupt"
+    done = "done"
+    fail = "fail"

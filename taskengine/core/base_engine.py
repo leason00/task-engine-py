@@ -8,7 +8,7 @@
 """
 import json
 
-from taskengine.core.models import save_task_step_meta_context, TaskStepInfo
+from taskengine.core.models.step_execute import StepExecute
 
 
 class BaseEngine(object):
@@ -18,7 +18,10 @@ class BaseEngine(object):
         task queue model
         :param task: task queue model
         """
-        self.params = task.params
+        try:
+            self.params = json.loads(task.params)
+        except:
+            self.params = {}
         self.context = {
 
         }
@@ -32,7 +35,7 @@ class BaseEngine(object):
         把context持久化,
         :return:
         """
-        TaskStepInfo.save_step_context(json.dumps(self.context), step_name, task_queue_id)
+        StepExecute.save_step_context(json.dumps(self.context), step_name, task_queue_id)
 
     def serialize_context(self, context):
         """

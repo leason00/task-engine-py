@@ -11,7 +11,7 @@ class Test(BaseEngine):
 
     @staticmethod
     def task_key(task_key):
-        return task_key == "test"
+        return task_key == "test_key_2"
 
     def step_one(self):
         time.sleep(10)
@@ -20,5 +20,5 @@ class Test(BaseEngine):
     def step_two(self):
         self.context["step_one"] = "step_1"
 
-    def step_finnish(self):
+    def step_finish(self):
         pass
