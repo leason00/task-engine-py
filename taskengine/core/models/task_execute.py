@@ -18,6 +18,7 @@ class TaskExecute(Base, FormatMixin):
     step_name = Column(String(100), nullable=False, server_default='', comment=u'start step name')
     status = Column(String(100), nullable=False, server_default=TaskStatus.created, comment=u'status')
     params = Column(String(1024), nullable=False, server_default='', comment=u'参数')
+    context = Column(String(2048), nullable=False, server_default='', comment=u'上下文')
 
     @staticmethod
     def init_by_dict(task_dict):
@@ -54,11 +55,9 @@ class TaskExecute(Base, FormatMixin):
         finally:
             session.close()
 
-    @staticmethod
-    def update_status(task_queue_id, status, step_name=None):
+    def update_status(self, status, step_name=None):
         """
         更新task的状态
-        :param task_queue_id:
         :param status:
         :param step_name: 方便结束或者中断的时候设置step name
         :return:
@@ -72,9 +71,25 @@ class TaskExecute(Base, FormatMixin):
             if step_name:
                 data["step_name"] = step_name
             result = session.query(TaskExecute).filter(
-                TaskExecute.id == task_queue_id,
+                TaskExecute.id == self.id,
 
             ).update(data)
+            if result == 0:
+                raise Exception("no match")
+
+            session.commit()
+        finally:
+            session.close()
+
+    def save_step_context(self, context):
+        # 保存任务上下文
+        session = db_session()
+        try:
+            result = session.query(TaskExecute).filter(
+                TaskExecute.id == self.id
+            ).update({
+                "context": context
+            })
             if result == 0:
                 raise Exception("no match")
 

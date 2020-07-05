@@ -14,11 +14,21 @@ class Test(BaseEngine):
         return task_key == "test_key_2"
 
     def step_one(self):
+        print("step_one doing ")
+        print("get context{}".format(self.context))
         time.sleep(10)
         self.context["step_one"] = "step_1"
 
     def step_two(self):
-        self.context["step_one"] = "step_1"
+        print("step_two doing ")
+        print("get context{}".format(self.context))
 
-    def step_finish(self):
-        pass
+        time.sleep(10)
+        self.context["step_two"] = "step_2"
+        # raise Exception("test error")
+
+    def step_three(self):
+        print("step_three doing ")
+        print("get context{}".format(self.context))
+        time.sleep(10)
+        self.context["step_three"] = "step_3"

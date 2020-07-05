@@ -30,4 +30,4 @@ class Task(object):
 if __name__ == '__main__':
     print('listen task queue')
     # Task().listen_task()
-    Main().do(3)
+    Main().do(8)
