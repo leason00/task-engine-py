@@ -2,13 +2,12 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020-06-29 22:04
 # @Author  : leason
-import json
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func, Text
+from sqlalchemy import Column, Integer, String, DateTime, func, Text
 
 from taskengine.core.const import StepStatus
 from taskengine.core.models.models import Base, FormatMixin
-from taskengine.db.mysql import db_session
+from taskengine.core.db.mysql import db_session
 
 
 class StepExecute(Base, FormatMixin):
@@ -58,11 +57,11 @@ class StepExecute(Base, FormatMixin):
             session.close()
 
     @staticmethod
-    def get_step(task_queue_id, step_name):
+    def get_step(task_execute_id, step_name):
         # 获取真正执行的某一步的信息
         session = db_session()
         try:
-            result = session.query(StepExecute).filter(StepExecute.task_execute_id == task_queue_id,
+            result = session.query(StepExecute).filter(StepExecute.task_execute_id == task_execute_id,
                                                        StepExecute.step_name == step_name).first()
             if result:
                 return result
@@ -86,5 +85,20 @@ class StepExecute(Base, FormatMixin):
                 raise Exception("no match")
 
             session.commit()
+        finally:
+            session.close()
+
+    def add_exec_log(self, record):
+        session = db_session()
+        try:
+            result = session.query(StepExecute).filter(
+                StepExecute.id == self.id,
+            ).first()
+            if result:
+                if result.exec_log:
+                    result.exec_log = "{}\n{}".format(result.exec_log, record)
+
+                session.flush()
+                session.commit()
         finally:
             session.close()

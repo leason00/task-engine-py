@@ -8,6 +8,8 @@
 """
 import json
 
+from taskengine.core.logger import get_logger_for_task
+
 
 class BaseEngine(object):
 
@@ -17,6 +19,7 @@ class BaseEngine(object):
         :param task: task queue model
         """
         self.task = task
+        self.logger = None
         try:
             self.params = json.loads(task.params)
         except:
@@ -43,3 +46,12 @@ class BaseEngine(object):
         """
         if self.task.context:
             self.context = json.loads(self.task.context)
+
+    def set_logger(self, step_name):
+        """
+        任务启动时注册logger模块
+        :param step_name:
+        :return:
+        """
+        step_instance = self.task.step_instance(step_name)
+        self.logger = get_logger_for_task(step_instance)

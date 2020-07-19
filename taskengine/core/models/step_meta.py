@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020-06-29 22:01
 # @Author  : leason
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
+from sqlalchemy import Column, Integer, String
 
 from taskengine.core.models.models import Base, FormatMixin
-from taskengine.db.mysql import db_session
+from taskengine.core.db.mysql import db_session
 
 
 class StepMeta(Base, FormatMixin):

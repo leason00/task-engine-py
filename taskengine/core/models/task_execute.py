@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 # @Time    : 2020-06-29 22:10
 # @Author  : leason
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
+from sqlalchemy import Column, String
 
 from taskengine.core.const import TaskStatus
 from taskengine.core.models.models import Base, FormatMixin
-from taskengine.db.mysql import db_session
+from taskengine.core.db.mysql import db_session
+from taskengine.core.models.step_execute import StepExecute
 
 
 class TaskExecute(Base, FormatMixin):
@@ -96,3 +97,7 @@ class TaskExecute(Base, FormatMixin):
             session.commit()
         finally:
             session.close()
+
+    def step_instance(self, step_name):
+        # 根据step获取 step execute的实例
+        return StepExecute.get_step(task_execute_id=self.id, step_name=step_name)

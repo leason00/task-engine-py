@@ -3,10 +3,9 @@
 # @Time    : 2020-06-29 22:10
 # @Author  : leason
 
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, func
+from sqlalchemy import Column, String
 
 from taskengine.core.models.models import Base, FormatMixin
-from taskengine.db.mysql import db_session
 
 
 class TaskMeta(Base, FormatMixin):

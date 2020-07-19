@@ -14,13 +14,7 @@ from taskengine.core.const import StepStatus, TaskStatus
 from taskengine.core.models.task_execute import TaskExecute
 from taskengine.core.models.step_execute import StepExecute
 from taskengine.core.models.step_meta import StepMeta
-from taskengine.engines.engine_test import Test
-
-# todo task的获取采用从代码路径里读取
-task_map = {
-    "test_key_2": Test
-}
-
+from taskengine.engines import TASK_MAP
 
 class TaskEngine(object):
 
@@ -35,7 +29,7 @@ class TaskEngine(object):
         :return:
         """
         print(self.task.task_key)
-        return task_map[self.task.task_key]
+        return TASK_MAP[self.task.task_key]
 
     def serialize_context(self):
         """
@@ -103,6 +97,8 @@ class TaskEngine(object):
             step_instance.set_step_status(StepStatus.doing)
             # 将上下文信息写出engine class
             engine.serialize_context()
+            # 注册日志模块
+            engine.set_logger(step.step_name)
             # 执行对应步骤的class method
             try:
                 step_instance.set_step_status(StepStatus.doing)
